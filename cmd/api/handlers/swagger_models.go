@@ -1,4 +1,4 @@
-package api
+package handlers
 
 // CalculateRequest is the request body for calculation.
 type CalculateRequest struct {

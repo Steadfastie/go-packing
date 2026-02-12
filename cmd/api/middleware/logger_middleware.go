@@ -1,13 +1,14 @@
-package api
+package middleware
 
 import (
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"log/slog"
+
+	"github.com/gin-gonic/gin"
 )
 
-func requestLogger(logger *slog.Logger) gin.HandlerFunc {
+func RequestLogger(logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		c.Next()

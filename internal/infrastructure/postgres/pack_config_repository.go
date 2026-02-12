@@ -62,8 +62,8 @@ func (r *PackConfigRepository) Create(ctx context.Context, packCfg domain.PackCo
 	return nil
 }
 
-// FindOneAndUpdate performs an optimistic-concurrency update using version CAS.
-func (r *PackConfigRepository) FindOneAndUpdate(ctx context.Context, packCfg domain.PackConfig) error {
+// Update performs an optimistic-concurrency update using version CAS.
+func (r *PackConfigRepository) Update(ctx context.Context, packCfg domain.PackConfig) error {
 	const updateQuery = `
 		UPDATE pack_configs
 		SET pack_sizes = $1,

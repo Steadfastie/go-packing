@@ -9,8 +9,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"go-packing/cmd/api/handlers"
+	"go-packing/cmd/api/router"
 	"go-packing/cmd/config"
-	httpapi "go-packing/cmd/httpapi"
 	"go-packing/internal/infrastructure/postgres"
 	"go-packing/internal/service"
 	"go-packing/pkg/logx"
@@ -49,10 +50,10 @@ func main() {
 	calculateService := service.NewCalculateService(repo)
 	packConfigService := service.NewPackConfigService(repo, logger)
 
-	calculateHandler := httpapi.NewCalculateHandler(calculateService, logger)
-	packSizesHandler := httpapi.NewPackSizesHandler(packConfigService, logger)
+	calculateHandler := handlers.NewCalculateHandler(calculateService, logger)
+	packSizesHandler := handlers.NewPackSizesHandler(packConfigService, logger)
 
-	router := httpapi.NewRouter(logger, calculateHandler, packSizesHandler)
+	router := router.NewRouter(logger, calculateHandler, packSizesHandler)
 
 	addr := cfg.Server.Port
 	if !strings.HasPrefix(addr, ":") {

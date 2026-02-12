@@ -9,11 +9,11 @@ import (
 )
 
 type Config struct {
-	AppEnv     string         `mapstructure:"app_env"`
+	AppEnv     string        `mapstructure:"app_env"`
 	Server     ServerConfig   `mapstructure:"server"`
 	Database   DatabaseConfig `mapstructure:"database"`
 	Log        LogConfig      `mapstructure:"log"`
-	SourcePath string         `mapstructure:"-"`
+	SourcePath string        `mapstructure:"-"`
 }
 
 type ServerConfig struct {
@@ -42,12 +42,7 @@ func Load() (Config, error) {
 	v.SetConfigName(env)
 	v.AddConfigPath("./cmd/config")
 	v.AddConfigPath("/app/cmd/config")
-	v.SetDefault("app_env", env)
 	v.SetDefault("log.level", "info")
-	_ = v.BindEnv("app_env", "APP_ENV")
-	_ = v.BindEnv("server.port", "PORT")
-	_ = v.BindEnv("database.url", "DATABASE_URL")
-	_ = v.BindEnv("log.level", "LOG_LEVEL")
 
 	if err := v.ReadInConfig(); err != nil {
 		return Config{}, fmt.Errorf("read %s config: %w", env, err)

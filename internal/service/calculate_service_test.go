@@ -29,7 +29,7 @@ func (s calcRepoStub) Create(context.Context, domain.PackConfig) error {
 	return nil
 }
 
-func (s calcRepoStub) FindOneAndUpdate(context.Context, domain.PackConfig) error {
+func (s calcRepoStub) Update(context.Context, domain.PackConfig) error {
 	return nil
 }
 

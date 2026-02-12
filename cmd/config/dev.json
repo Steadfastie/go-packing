@@ -1,5 +1,4 @@
 {
-  "app_env": "dev",
   "server": {
     "port": "8080"
   },

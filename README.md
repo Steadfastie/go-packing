@@ -2,15 +2,10 @@
 
 Run the API and PostgreSQL locally with Docker Compose.
 
-## Prerequisites
-
-- Docker
-- Docker Compose
-
 ## Start locally
 
 ```bash
-docker compose up --build
+docker compose -p packaging up -d --build
 ```
 
 What this starts:
@@ -22,15 +17,3 @@ What this starts:
 Swagger UI:
 
 - `http://localhost:8080/swagger/index.html`
-
-## Stop
-
-```bash
-docker compose down
-```
-
-If you need a clean database volume:
-
-```bash
-docker compose down -v
-```

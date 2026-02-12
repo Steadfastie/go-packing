@@ -41,7 +41,7 @@ func (s *packConfigRepoStub) Create(_ context.Context, cfg domain.PackConfig) er
 	return nil
 }
 
-func (s *packConfigRepoStub) FindOneAndUpdate(_ context.Context, cfg domain.PackConfig) error {
+func (s *packConfigRepoStub) Update(_ context.Context, cfg domain.PackConfig) error {
 	s.updated = &cfg
 	if s.updErr != nil {
 		return s.updErr

@@ -1,22 +1,25 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    container_name: go-packing-postgres
+    image: postgres:18-alpine
+    command: ["postgres", "-p", "5400"]
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: packing
+      POSTGRES_PASSWORD: packing
       POSTGRES_DB: packing
     ports:
-      - "5432:5432"
+      - "5400:5400"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d packing"]
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 5400 -U packing -d packing"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  app:
+  api:
+    container_name: go-packing-api
     build:
       context: .
       dockerfile: Dockerfile

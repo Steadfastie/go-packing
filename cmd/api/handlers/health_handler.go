@@ -1,4 +1,4 @@
-package api
+package handlers
 
 import (
 	"net/http"
@@ -7,6 +7,6 @@ import (
 )
 
 // healthHandler serves a lightweight liveness endpoint.
-func healthHandler(c *gin.Context) {
+func HealthHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }

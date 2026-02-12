@@ -53,7 +53,7 @@ func (s *PackConfigService) ReplacePackSizes(ctx context.Context, packSizes []in
 		return nil, err
 	}
 
-	if err := s.repo.FindOneAndUpdate(ctx, *packCfg); err != nil {
+	if err := s.repo.Update(ctx, *packCfg); err != nil {
 		return nil, err
 	}
 
