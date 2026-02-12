@@ -30,6 +30,10 @@ func (h *CalculateHandler) Handle(c *gin.Context) {
 		httpx.WriteError(c, http.StatusBadRequest, "INVALID_REQUEST", "invalid request body")
 		return
 	}
+	if req.Amount <= 0 {
+		httpx.WriteError(c, http.StatusBadRequest, "INVALID_AMOUNT", domain.ErrInvalidAmount.Error())
+		return
+	}
 
 	packs, err := h.svc.Calculate(c.Request.Context(), req.Amount)
 	if err != nil {
