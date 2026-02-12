@@ -14,13 +14,6 @@ func NewOptimizer() *Optimizer {
 }
 
 func (o *Optimizer) Optimize(amount int, packSizes []int) ([]domain.PackBreakdown, error) {
-	if amount <= 0 {
-		return nil, domain.ErrInvalidAmount
-	}
-	if !isValidPackSizes(packSizes) {
-		return nil, domain.ErrInvalidPackSizes
-	}
-
 	sizes := make([]int, len(packSizes))
 	copy(sizes, packSizes)
 	sort.Slice(sizes, func(i, j int) bool {
@@ -92,23 +85,4 @@ func (o *Optimizer) Optimize(amount int, packSizes []int) ([]domain.PackBreakdow
 	}
 
 	return result, nil
-}
-
-func isValidPackSizes(sizes []int) bool {
-	if len(sizes) == 0 {
-		return false
-	}
-
-	seen := make(map[int]struct{}, len(sizes))
-	for _, size := range sizes {
-		if size <= 0 {
-			return false
-		}
-		if _, ok := seen[size]; ok {
-			return false
-		}
-		seen[size] = struct{}{}
-	}
-
-	return true
 }

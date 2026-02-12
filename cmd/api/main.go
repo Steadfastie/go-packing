@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"go-packing/internal/domain/solver"
 	"go-packing/internal/infrastructure/postgres"
 	api "go-packing/internal/presentation/http"
 	"go-packing/internal/service"
@@ -36,9 +35,8 @@ func main() {
 	}()
 
 	repo := postgres.NewPackConfigRepository(db, logger)
-	optimizer := solver.NewOptimizer()
 
-	calculateService := service.NewCalculateService(repo, optimizer)
+	calculateService := service.NewCalculateService(repo)
 	packConfigService := service.NewPackConfigService(repo)
 
 	calculateHandler := api.NewCalculateHandler(calculateService, logger)
