@@ -53,6 +53,8 @@ func (o *Optimizer) Optimize(amount int, packSizes []int) ([]domain.PackBreakdow
 
 			candidate := dp[total-pack] + 1
 			if candidate < dp[total] {
+				// Keep the first best candidate; because packs are iterated in descending
+				// order, equal-count ties deterministically prefer larger packs.
 				dp[total] = candidate
 				prevTotal[total] = total - pack
 				prevPack[total] = pack
@@ -61,6 +63,7 @@ func (o *Optimizer) Optimize(amount int, packSizes []int) ([]domain.PackBreakdow
 	}
 
 	bestTotal := -1
+	// Rule precedence: minimize shipped quantity first, then packs.
 	for total := amount; total <= upper; total++ {
 		if dp[total] != inf {
 			bestTotal = total

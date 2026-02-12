@@ -83,6 +83,7 @@ WHERE id = $3
 		return fmt.Errorf("rows affected: %w", err)
 	}
 	if affected == 0 {
+		// Optimistic concurrency: another writer moved the version ahead.
 		return domain.ErrPackConfigVersionConflict
 	}
 
