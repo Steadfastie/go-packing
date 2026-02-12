@@ -1,4 +1,4 @@
-package http
+package api
 
 import (
 	"errors"
@@ -58,10 +58,8 @@ func (h *PackSizesHandler) Replace(c *gin.Context) {
 	cfg, err := h.svc.ReplacePackSizes(c.Request.Context(), req.PackSizes)
 	if err != nil {
 		switch {
-		case errors.Is(err, domain.ErrInvalidPackSizes):
-			httpx.WriteError(c, http.StatusBadRequest, "INVALID_PACK_SIZES", err.Error())
 		case errors.Is(err, domain.ErrConcurrencyConflict):
-			httpx.WriteError(c, http.StatusConflict, "VERSION_CONFLICT", err.Error())
+			httpx.WriteError(c, http.StatusConflict, "CONCURRENCY_CONFLICT", err.Error())
 		default:
 			h.logger.Error("replace pack sizes failed", "error", err)
 			httpx.WriteError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error")

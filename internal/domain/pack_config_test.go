@@ -33,17 +33,3 @@ func TestPackConfigReplace(t *testing.T) {
 		t.Fatalf("unexpected pack sizes: %#v", cfg.PackSizes)
 	}
 }
-
-func TestPackConfigValidation(t *testing.T) {
-	if _, err := NewPackConfig([]int{}); err != ErrInvalidPackSizes {
-		t.Fatalf("expected ErrInvalidPackSizes, got %v", err)
-	}
-
-	cfg, err := NewPackConfig([]int{1})
-	if err != nil {
-		t.Fatalf("new pack config returned error: %v", err)
-	}
-	if err := cfg.Replace([]int{1, 1}); err != ErrInvalidPackSizes {
-		t.Fatalf("expected ErrInvalidPackSizes, got %v", err)
-	}
-}

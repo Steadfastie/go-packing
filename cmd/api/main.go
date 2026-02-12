@@ -2,28 +2,32 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
+	"go-packing/internal/api"
+	"go-packing/internal/config"
 	"go-packing/internal/infrastructure/postgres"
-	api "go-packing/internal/presentation/http"
 	"go-packing/internal/service"
 	"go-packing/pkg/logx"
 )
 
 func main() {
-	logger := logx.NewJSONLogger()
+	cfg, err := config.Load()
+	if err != nil {
+		// Create a basic logger for errors before config is loaded
+		slog.Error("config initialization failed", "error", err)
+		os.Exit(1)
+	}
+	
+	logger := logx.NewJSONLogger(cfg.Log.Level)
 	logger.Info("starting service")
 
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		dsn = "postgres://postgres:postgres@localhost:5432/packing?sslmode=disable"
-	}
-
-	db, err := postgres.NewDB(context.Background(), dsn)
+	db, err := postgres.NewDB(context.Background(), cfg.Database.URL)
 	if err != nil {
 		logger.Error("database initialization failed", "error", err)
 		os.Exit(1)
@@ -44,9 +48,9 @@ func main() {
 
 	router := api.NewRouter(logger, calculateHandler, packSizesHandler)
 
-	addr := ":8080"
-	if port := os.Getenv("PORT"); port != "" {
-		addr = fmt.Sprintf(":%s", port)
+	addr := cfg.Server.Port
+	if !strings.HasPrefix(addr, ":") {
+		addr = ":" + addr
 	}
 
 	server := &http.Server{

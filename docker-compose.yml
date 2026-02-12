@@ -21,8 +21,7 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/packing?sslmode=disable
-      PORT: 8080
+      APP_ENV: prod
     ports:
       - "8080:8080"
     depends_on:

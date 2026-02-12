@@ -1,4 +1,4 @@
-package http
+package api
 
 import (
 	"errors"
@@ -38,8 +38,6 @@ func (h *CalculateHandler) Handle(c *gin.Context) {
 	packs, err := h.svc.Calculate(c.Request.Context(), req.Amount)
 	if err != nil {
 		switch {
-		case errors.Is(err, domain.ErrInvalidAmount):
-			httpx.WriteError(c, http.StatusBadRequest, "INVALID_AMOUNT", err.Error())
 		case errors.Is(err, domain.ErrPackSizesNotConfigured):
 			httpx.WriteError(c, http.StatusConflict, "PACK_SIZES_NOT_CONFIGURED", err.Error())
 		default:

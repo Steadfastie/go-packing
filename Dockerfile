@@ -11,6 +11,7 @@ FROM alpine:3.20
 WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=builder /out/api /app/api
+COPY --from=builder /src/configs /app/configs
 EXPOSE 8080
 USER app
 ENTRYPOINT ["/app/api"]

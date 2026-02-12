@@ -31,37 +31,35 @@ func (r *PackConfigRepository) Get(ctx context.Context) (*domain.PackConfig, err
 
 	row := r.db.QueryRowContext(ctx, query)
 
-	var cfg domain.PackConfig
-	if err := row.Scan(&cfg.Version, pq.Array(&cfg.PackSizes), &cfg.UpdatedAt); err != nil {
+	var packCfg domain.PackConfig
+	if err := row.Scan(&packCfg.Version, pq.Array(&packCfg.PackSizes), &packCfg.UpdatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
-		r.logger.Error("failed to fetch pack configuration", "error", err)
-		return nil, fmt.Errorf("fetch pack configuration: %w", err)
+		r.logger.Error("failed to fetch pack config", "error", err)
+		return nil, fmt.Errorf("fetch pack config: %w", err)
 	}
 
-	return &cfg, nil
+	return &packCfg, nil
 }
 
-func (r *PackConfigRepository) Create(ctx context.Context, cfg domain.PackConfig) error {
+func (r *PackConfigRepository) Create(ctx context.Context, packCfg domain.PackConfig) error {
 	const insertQuery = `
 		INSERT INTO pack_configs (id, pack_sizes, version, updated_at)
 		VALUES (1, $1, $2, $3)
+		ON CONFLICT DO NOTHING
 	`
 
-	_, err := r.db.ExecContext(ctx, insertQuery, pq.Array(cfg.PackSizes), cfg.Version, cfg.UpdatedAt)
+	_, err := r.db.ExecContext(ctx, insertQuery, pq.Array(packCfg.PackSizes), packCfg.Version, packCfg.UpdatedAt)
 	if err != nil {
-		if isUniqueViolation(err) {
-			return domain.ErrConcurrencyConflict
-		}
-		r.logger.Error("failed to create pack configuration", "error", err)
-		return fmt.Errorf("create pack configuration: %w", err)
+		r.logger.Error("failed to create pack config", "error", err)
+		return fmt.Errorf("create pack config: %w", err)
 	}
 
 	return nil
 }
 
-func (r *PackConfigRepository) FindOneAndUpdate(ctx context.Context, cfg domain.PackConfig) error {
+func (r *PackConfigRepository) FindOneAndUpdate(ctx context.Context, packCfg domain.PackConfig) error {
 	const updateQuery = `
 		UPDATE pack_configs
 		SET pack_sizes = $1,
@@ -71,11 +69,10 @@ func (r *PackConfigRepository) FindOneAndUpdate(ctx context.Context, cfg domain.
 			AND version = $4
 	`
 
-	previousVersion := cfg.Version - 1
-	result, err := r.db.ExecContext(ctx, updateQuery, pq.Array(cfg.PackSizes), cfg.Version, cfg.UpdatedAt, previousVersion)
+	result, err := r.db.ExecContext(ctx, updateQuery, pq.Array(packCfg.PackSizes), packCfg.Version, packCfg.UpdatedAt, packCfg.Version - 1)
 	if err != nil {
-		r.logger.Error("failed to update pack configuration", "error", err)
-		return fmt.Errorf("update pack configuration: %w", err)
+		r.logger.Error("failed to update pack config", "error", err)
+		return fmt.Errorf("update pack config: %w", err)
 	}
 
 	affected, err := result.RowsAffected()
@@ -87,13 +84,4 @@ func (r *PackConfigRepository) FindOneAndUpdate(ctx context.Context, cfg domain.
 	}
 
 	return nil
-}
-
-func isUniqueViolation(err error) bool {
-	var pqErr *pq.Error
-	if !errors.As(err, &pqErr) {
-		return false
-	}
-
-	return pqErr.Code == "23505"
 }

@@ -1,0 +1,49 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true # Include test files or not.
+  allow-serial-runners: true
+
+linters:
+  default: none
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - cyclop # Checks function and package cyclomatic complexity.
+    - misspell
+  settings:
+    errcheck:
+      verbose: true # Display function signature instead of selector.
+    cyclop:
+      max-complexity: 25
+
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
+    - swaggo
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/coretech/boss-prc-referrals
+    golines:
+      max-len: 200
+      tab-len: 4
+      shorten-comments: true
+
+issues:
+  # Show only new issues: if there are unstaged changes or untracked files,
+  # only those changes are analyzed, else only changes in HEAD~ are analyzed.
+  # It's a super-useful option for integration of golangci-lint into existing large codebase.
+  # It's not practical to fix all existing issues at the moment of integration:
+  # much better don't allow issues in new code.
+  new: true
+  # Show only new issues created after the best common ancestor (merge-base against HEAD)
+  new-from-merge-base: main
+  # Fix found issues (if it's supported by the linter).
+  fix: true

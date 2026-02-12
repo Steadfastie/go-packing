@@ -44,7 +44,7 @@ func (s *PackConfigService) ReplacePackSizes(ctx context.Context, packSizes []in
 		return packCfg, nil
 	}
 
-	s.logger.Info("pack config found, updating existing one", "version", packCfg.Version)
+	s.logger.Info("pack config found, updating existing one")
 	if err := packCfg.Replace(packSizes); err != nil {
 		return nil, err
 	}
