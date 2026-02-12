@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.26-alpine AS builder
 WORKDIR /src
 
 COPY go.mod ./
@@ -11,7 +11,7 @@ FROM alpine:3.20
 WORKDIR /app
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=builder /out/api /app/api
-COPY --from=builder /src/configs /app/configs
+COPY --from=builder /src/cmd/config /app/cmd/config
 EXPOSE 8080
 USER app
 ENTRYPOINT ["/app/api"]

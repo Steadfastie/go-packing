@@ -1,0 +1,12 @@
+{
+  "app_env": "dev",
+  "server": {
+    "port": "8080"
+  },
+  "database": {
+    "url": "postgres://packing:packing@localhost:5400/packing?sslmode=disable"
+  },
+  "log": {
+    "level": "debug"
+  }
+}

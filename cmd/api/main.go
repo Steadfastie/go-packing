@@ -9,13 +9,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"go-packing/internal/api"
-	"go-packing/internal/config"
+	"go-packing/cmd/config"
+	httpapi "go-packing/cmd/httpapi"
 	"go-packing/internal/infrastructure/postgres"
 	"go-packing/internal/service"
 	"go-packing/pkg/logx"
 )
 
+// @title Go Packing Service API
+// @version 1.0
+// @description API for calculating optimized pack allocations and managing pack-size configuration.
+// @BasePath /
+// @schemes http
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
@@ -23,9 +28,10 @@ func main() {
 		slog.Error("config initialization failed", "error", err)
 		os.Exit(1)
 	}
-	
+
 	logger := logx.NewJSONLogger(cfg.Log.Level)
 	logger.Info("starting service")
+	logger.Info("configuration loaded", "env", cfg.AppEnv, "config_file", cfg.SourcePath)
 
 	db, err := postgres.NewDB(context.Background(), cfg.Database.URL)
 	if err != nil {
@@ -43,10 +49,10 @@ func main() {
 	calculateService := service.NewCalculateService(repo)
 	packConfigService := service.NewPackConfigService(repo, logger)
 
-	calculateHandler := api.NewCalculateHandler(calculateService, logger)
-	packSizesHandler := api.NewPackSizesHandler(packConfigService, logger)
+	calculateHandler := httpapi.NewCalculateHandler(calculateService, logger)
+	packSizesHandler := httpapi.NewPackSizesHandler(packConfigService, logger)
 
-	router := api.NewRouter(logger, calculateHandler, packSizesHandler)
+	router := httpapi.NewRouter(logger, calculateHandler, packSizesHandler)
 
 	addr := cfg.Server.Port
 	if !strings.HasPrefix(addr, ":") {
