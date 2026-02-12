@@ -6,28 +6,44 @@ import (
 )
 
 type PackConfig struct {
-	ID        int16
 	Version   int64
 	PackSizes []int
 	UpdatedAt time.Time
 }
 
-func (p *PackConfig) Replace(newSizes []int) error {
-	if !validPackSizes(newSizes) {
+func NewPackConfig(sizes []int) (*PackConfig, error) {
+	if !isValidPackSizes(sizes) {
+		return nil, ErrInvalidPackSizes
+	}
+
+	newSizes := make([]int, len(sizes))
+	copy(newSizes, sizes)
+	sort.Ints(newSizes)
+
+	return &PackConfig{
+		Version:   0,
+		PackSizes: newSizes,
+		UpdatedAt: time.Now().UTC(),
+	}, nil
+}
+
+func (p *PackConfig) Replace(sizes []int) error {
+	if !isValidPackSizes(sizes) {
 		return ErrInvalidPackSizes
 	}
 
-	next := make([]int, len(newSizes))
-	copy(next, newSizes)
-	sort.Ints(next)
-	p.PackSizes = next
+	newSizes := make([]int, len(sizes))
+	copy(newSizes, sizes)
+	sort.Ints(newSizes)
+
+	p.PackSizes = newSizes
 	p.Version++
 	p.UpdatedAt = time.Now().UTC()
 
 	return nil
 }
 
-func validPackSizes(sizes []int) bool {
+func isValidPackSizes(sizes []int) bool {
 	if len(sizes) == 0 {
 		return false
 	}

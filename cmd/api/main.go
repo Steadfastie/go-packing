@@ -37,7 +37,7 @@ func main() {
 	repo := postgres.NewPackConfigRepository(db, logger)
 
 	calculateService := service.NewCalculateService(repo)
-	packConfigService := service.NewPackConfigService(repo)
+	packConfigService := service.NewPackConfigService(repo, logger)
 
 	calculateHandler := api.NewCalculateHandler(calculateService, logger)
 	packSizesHandler := api.NewPackSizesHandler(packConfigService, logger)
