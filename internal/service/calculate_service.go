@@ -12,10 +12,12 @@ type CalculateService struct {
 	repo domain.PackConfigsRepository
 }
 
+// NewCalculateService creates a calculation service backed by pack configuration storage.
 func NewCalculateService(repo domain.PackConfigsRepository) *CalculateService {
 	return &CalculateService{repo: repo}
 }
 
+// Calculate returns an optimal pack breakdown for the requested amount.
 func (s *CalculateService) Calculate(ctx context.Context, amount int) ([]domain.PackBreakdown, error) {
 	if amount <= 0 {
 		return nil, domain.ErrInvalidAmount
@@ -32,6 +34,7 @@ func (s *CalculateService) Calculate(ctx context.Context, amount int) ([]domain.
 	return optimizePacks(amount, cfg.PackSizes)
 }
 
+// optimizePacks minimizes shipped quantity first, then pack count.
 func optimizePacks(amount int, packSizes []int) ([]domain.PackBreakdown, error) {
 	sizes := make([]int, len(packSizes))
 	copy(sizes, packSizes)
@@ -40,6 +43,7 @@ func optimizePacks(amount int, packSizes []int) ([]domain.PackBreakdown, error) 
 	})
 
 	minPack := sizes[len(sizes)-1]
+	// The smallest valid overship is bounded by minPack-1.
 	upper := amount + minPack - 1
 	inf := math.MaxInt / 4
 
@@ -64,6 +68,7 @@ func optimizePacks(amount int, packSizes []int) ([]domain.PackBreakdown, error) 
 			}
 
 			candidate := dp[total-pack] + 1
+			// First minimum candidate wins; descending sizes give deterministic tie-break.
 			if candidate < dp[total] {
 				dp[total] = candidate
 				prevTotal[total] = total - pack

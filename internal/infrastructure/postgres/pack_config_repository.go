@@ -17,10 +17,12 @@ type PackConfigRepository struct {
 	logger *slog.Logger
 }
 
+// NewPackConfigRepository creates a PostgreSQL-backed configuration repository.
 func NewPackConfigRepository(db *sql.DB, logger *slog.Logger) *PackConfigRepository {
 	return &PackConfigRepository{db: db, logger: logger}
 }
 
+// Get loads the single pack config row (id=1). It returns nil when not initialized.
 func (r *PackConfigRepository) Get(ctx context.Context) (*domain.PackConfig, error) {
 	const query = `
 		SELECT version, pack_sizes, updated_at
@@ -43,6 +45,7 @@ func (r *PackConfigRepository) Get(ctx context.Context) (*domain.PackConfig, err
 	return &packCfg, nil
 }
 
+// Create inserts the initial config row if it does not already exist.
 func (r *PackConfigRepository) Create(ctx context.Context, packCfg domain.PackConfig) error {
 	const insertQuery = `
 		INSERT INTO pack_configs (id, pack_sizes, version, updated_at)
@@ -59,6 +62,7 @@ func (r *PackConfigRepository) Create(ctx context.Context, packCfg domain.PackCo
 	return nil
 }
 
+// FindOneAndUpdate performs an optimistic-concurrency update using version CAS.
 func (r *PackConfigRepository) FindOneAndUpdate(ctx context.Context, packCfg domain.PackConfig) error {
 	const updateQuery = `
 		UPDATE pack_configs
@@ -69,12 +73,13 @@ func (r *PackConfigRepository) FindOneAndUpdate(ctx context.Context, packCfg dom
 			AND version = $4
 	`
 
-	result, err := r.db.ExecContext(ctx, updateQuery, pq.Array(packCfg.PackSizes), packCfg.Version, packCfg.UpdatedAt, packCfg.Version - 1)
+	result, err := r.db.ExecContext(ctx, updateQuery, pq.Array(packCfg.PackSizes), packCfg.Version, packCfg.UpdatedAt, packCfg.Version-1)
 	if err != nil {
 		r.logger.Error("failed to update pack config", "error", err)
 		return fmt.Errorf("update pack config: %w", err)
 	}
 
+	// No affected rows means version mismatch (concurrent writer won).
 	affected, err := result.RowsAffected()
 	if err != nil {
 		return fmt.Errorf("rows affected: %w", err)

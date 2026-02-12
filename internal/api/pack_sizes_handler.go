@@ -17,10 +17,19 @@ type PackSizesHandler struct {
 	logger *slog.Logger
 }
 
+// NewPackSizesHandler builds handlers for /api/v1/pack-sizes endpoints.
 func NewPackSizesHandler(svc *service.PackConfigService, logger *slog.Logger) *PackSizesHandler {
 	return &PackSizesHandler{svc: svc, logger: logger}
 }
 
+// Get handles GET /api/v1/pack-sizes.
+// @Summary Get current pack sizes
+// @Description Returns configured pack sizes.
+// @Tags Pack Sizes
+// @Produce json
+// @Success 200 {object} PackSizesResponse
+// @Failure 500 {object} httpx.ErrorResponse
+// @Router /api/v1/pack-sizes [get]
 func (h *PackSizesHandler) Get(c *gin.Context) {
 	packCfg, err := h.svc.GetCurrent(c.Request.Context())
 	if err != nil {
@@ -41,10 +50,20 @@ func (h *PackSizesHandler) Get(c *gin.Context) {
 	})
 }
 
+// Replace handles PUT /api/v1/pack-sizes.
+// @Summary Replace pack sizes
+// @Description Replaces all pack sizes and applies optimistic concurrency rules in persistence.
+// @Tags Pack Sizes
+// @Accept json
+// @Produce json
+// @Param request body PackSizesRequest true "Pack sizes payload"
+// @Success 200 {object} PackSizesResponse
+// @Failure 400 {object} httpx.ErrorResponse
+// @Failure 409 {object} httpx.ErrorResponse
+// @Failure 500 {object} httpx.ErrorResponse
+// @Router /api/v1/pack-sizes [put]
 func (h *PackSizesHandler) Replace(c *gin.Context) {
-	var req struct {
-		PackSizes []int `json:"pack_sizes"`
-	}
+	var req PackSizesRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		httpx.WriteError(c, http.StatusBadRequest, "INVALID_REQUEST", "invalid request body")
@@ -58,6 +77,7 @@ func (h *PackSizesHandler) Replace(c *gin.Context) {
 	cfg, err := h.svc.ReplacePackSizes(c.Request.Context(), req.PackSizes)
 	if err != nil {
 		switch {
+		// Conflict means another writer updated config between read and write.
 		case errors.Is(err, domain.ErrConcurrencyConflict):
 			httpx.WriteError(c, http.StatusConflict, "CONCURRENCY_CONFLICT", err.Error())
 		default:
@@ -77,6 +97,7 @@ func isValidPackSizes(packSizes []int) bool {
 		return false
 	}
 
+	// Validation keeps persistence and solver assumptions simple.
 	seen := make(map[int]struct{}, len(packSizes))
 	for _, size := range packSizes {
 		if size <= 0 {

@@ -5,12 +5,14 @@ import (
 	"time"
 )
 
+// PackConfig maps to the single persisted pack configuration row.
 type PackConfig struct {
 	Version   int64
 	PackSizes []int
 	UpdatedAt time.Time
 }
 
+// NewPackConfig creates a new in-memory configuration.
 func NewPackConfig(sizes []int) (*PackConfig, error) {
 	newSizes := make([]int, len(sizes))
 	copy(newSizes, sizes)
@@ -23,6 +25,7 @@ func NewPackConfig(sizes []int) (*PackConfig, error) {
 	}, nil
 }
 
+// Replace swaps pack sizes and advances version for CAS persistence updates.
 func (p *PackConfig) Replace(sizes []int) error {
 	newSizes := make([]int, len(sizes))
 	copy(newSizes, sizes)

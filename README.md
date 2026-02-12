@@ -1,52 +1,36 @@
 # Go Packing Service
 
-API-only Go/Gin service that calculates optimal pack allocations and persists configurable pack sizes in PostgreSQL with optimistic concurrency.
+Run the API and PostgreSQL locally with Docker Compose.
 
-## Tech Stack
+## Prerequisites
 
-- Go
-- Gin HTTP framework
-- PostgreSQL (`database/sql` + `lib/pq`, no ORM)
-- Viper (JSON profile config loading)
-- `slog` JSON logging
-- Docker + Docker Compose
-- Go standard testing library
+- Docker
+- Docker Compose
 
-## Configuration (Viper)
-
-Configuration is loaded by environment profile:
-
-- `APP_ENV=dev` -> `configs/dev.json`
-- `APP_ENV=prod` -> `configs/prod.json`
-
-If `APP_ENV` is not set, `dev` is used.
-
-### Config files
-
-- `configs/dev.json`
-- `configs/prod.json`
-
-### Environment overrides
-
-These environment variables override file values:
-
-- `APP_ENV`
-- `PORT` (maps to `server.port`)
-- `DATABASE_URL` (maps to `database.url`)
-
-## VS Code Launch Configs
-
-VS Code launch profiles are in `.vscode/launch.json`:
-
-- `Go Packing API (dev)`
-- `Go Packing API (prod)`
-
-Each profile sets `APP_ENV` accordingly.
-
-## Run with Docker Compose
+## Start locally
 
 ```bash
 docker compose up --build
 ```
 
-The compose app service runs with `APP_ENV=prod`, so it reads `configs/prod.json` by default.
+What this starts:
+
+- `go-packing-postgres` on `localhost:5400`
+- `go-packing-db-init` to create database/table from `docker/postgres/init.sql`
+- `go-packing-api` on `localhost:8080`
+
+Swagger UI:
+
+- `http://localhost:8080/swagger/index.html`
+
+## Stop
+
+```bash
+docker compose down
+```
+
+If you need a clean database volume:
+
+```bash
+docker compose down -v
+```
