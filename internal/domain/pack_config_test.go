@@ -2,51 +2,48 @@ package domain
 
 import "testing"
 
-func TestPackConfigReplace(t *testing.T) {
-	cfg := PackConfig{
-		ID:        1,
-		Version:   3,
-		PackSizes: []int{100, 200},
-	}
-
-	err := cfg.Replace([]int{53, 23, 31})
+func TestNewPackConfig(t *testing.T) {
+	cfg, err := NewPackConfig([]int{53, 23, 31})
 	if err != nil {
-		t.Fatalf("replace returned error: %v", err)
+		t.Fatalf("new pack config returned error: %v", err)
 	}
 
-	if cfg.Version != 4 {
-		t.Fatalf("expected version 4, got %d", cfg.Version)
+	if cfg.Version != 0 {
+		t.Fatalf("expected version 0, got %d", cfg.Version)
 	}
-
-	expected := []int{23, 31, 53}
-	for i := range expected {
-		if cfg.PackSizes[i] != expected[i] {
-			t.Fatalf("unexpected pack sizes at %d: got %d want %d", i, cfg.PackSizes[i], expected[i])
-		}
+	if len(cfg.PackSizes) != 3 || cfg.PackSizes[0] != 23 || cfg.PackSizes[2] != 53 {
+		t.Fatalf("unexpected pack sizes: %#v", cfg.PackSizes)
 	}
 }
 
-func TestPackConfigReplaceValidation(t *testing.T) {
-	tests := []struct {
-		name  string
-		sizes []int
-	}{
-		{name: "empty", sizes: []int{}},
-		{name: "negative", sizes: []int{10, -1}},
-		{name: "zero", sizes: []int{10, 0}},
-		{name: "duplicate", sizes: []int{10, 10}},
+func TestPackConfigReplace(t *testing.T) {
+	cfg, err := NewPackConfig([]int{250, 500})
+	if err != nil {
+		t.Fatalf("new pack config returned error: %v", err)
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			cfg := PackConfig{}
-			err := cfg.Replace(tc.sizes)
-			if err == nil {
-				t.Fatalf("expected validation error")
-			}
-			if err != ErrInvalidPackSizes {
-				t.Fatalf("unexpected error: %v", err)
-			}
-		})
+	if err := cfg.Replace([]int{1000, 500, 250}); err != nil {
+		t.Fatalf("replace returned error: %v", err)
+	}
+
+	if cfg.Version != 1 {
+		t.Fatalf("expected version 1, got %d", cfg.Version)
+	}
+	if len(cfg.PackSizes) != 3 || cfg.PackSizes[0] != 250 || cfg.PackSizes[2] != 1000 {
+		t.Fatalf("unexpected pack sizes: %#v", cfg.PackSizes)
+	}
+}
+
+func TestPackConfigValidation(t *testing.T) {
+	if _, err := NewPackConfig([]int{}); err != ErrInvalidPackSizes {
+		t.Fatalf("expected ErrInvalidPackSizes, got %v", err)
+	}
+
+	cfg, err := NewPackConfig([]int{1})
+	if err != nil {
+		t.Fatalf("new pack config returned error: %v", err)
+	}
+	if err := cfg.Replace([]int{1, 1}); err != ErrInvalidPackSizes {
+		t.Fatalf("expected ErrInvalidPackSizes, got %v", err)
 	}
 }

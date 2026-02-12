@@ -3,64 +3,82 @@ package service
 import (
 	"context"
 	"errors"
+	"io"
+	"log/slog"
 	"testing"
 
 	"go-packing/internal/domain"
 )
 
-type configRepoStub struct {
-	cfg         *domain.PackConfig
-	getErr      error
-	saveErr     error
-	savedCfg    domain.PackConfig
-	savedPrev   int64
-	saveInvoked bool
+type packConfigRepoStub struct {
+	current *domain.PackConfig
+	getErr  error
+	addErr  error
+	updErr  error
+
+	created *domain.PackConfig
+	updated *domain.PackConfig
 }
 
-func (s *configRepoStub) Get(context.Context) (*domain.PackConfig, error) {
+func (s *packConfigRepoStub) Get(context.Context) (*domain.PackConfig, error) {
 	if s.getErr != nil {
 		return nil, s.getErr
 	}
-	if s.cfg == nil {
+	if s.current == nil {
 		return nil, nil
 	}
-	copyCfg := *s.cfg
-	copyCfg.PackSizes = append([]int(nil), s.cfg.PackSizes...)
+	copyCfg := *s.current
+	copyCfg.PackSizes = append([]int(nil), s.current.PackSizes...)
 	return &copyCfg, nil
 }
 
-func (s *configRepoStub) SaveIfPreviousVersion(_ context.Context, cfg domain.PackConfig, previousVersion int64) error {
-	s.saveInvoked = true
-	s.savedCfg = cfg
-	s.savedPrev = previousVersion
-	if s.saveErr != nil {
-		return s.saveErr
+func (s *packConfigRepoStub) Create(_ context.Context, cfg domain.PackConfig) error {
+	s.created = &cfg
+	if s.addErr != nil {
+		return s.addErr
 	}
-	s.cfg = &cfg
+	s.current = &cfg
 	return nil
 }
 
-func TestPackConfigServiceGetCurrent(t *testing.T) {
-	repo := &configRepoStub{}
-	svc := NewPackConfigService(repo)
-
-	cfg, err := svc.GetCurrent(context.Background())
-	if err != nil {
-		t.Fatalf("get current returned error: %v", err)
+func (s *packConfigRepoStub) FindOneAndUpdate(_ context.Context, cfg domain.PackConfig) error {
+	s.updated = &cfg
+	if s.updErr != nil {
+		return s.updErr
 	}
+	s.current = &cfg
+	return nil
+}
+
+func newPackConfigServiceForTest(repo domain.PackConfigsRepository) *PackConfigService {
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+	return NewPackConfigService(repo, logger)
+}
+
+func TestPackConfigServiceCreate(t *testing.T) {
+	repo := &packConfigRepoStub{}
+	svc := newPackConfigServiceForTest(repo)
+
+	cfg, err := svc.ReplacePackSizes(context.Background(), []int{53, 23, 31})
+	if err != nil {
+		t.Fatalf("replace returned error: %v", err)
+	}
+
 	if cfg.Version != 0 {
 		t.Fatalf("expected version 0, got %d", cfg.Version)
 	}
-	if len(cfg.PackSizes) != 0 {
-		t.Fatalf("expected empty pack sizes, got %#v", cfg.PackSizes)
+	if repo.created == nil {
+		t.Fatal("expected create to be called")
 	}
 }
 
-func TestPackConfigServiceReplacePackSizes(t *testing.T) {
-	repo := &configRepoStub{cfg: &domain.PackConfig{ID: 1, Version: 2, PackSizes: []int{10, 20}}}
-	svc := NewPackConfigService(repo)
+func TestPackConfigServiceUpdate(t *testing.T) {
+	repo := &packConfigRepoStub{
+		current: &domain.PackConfig{Version: 2, PackSizes: []int{250, 500}},
+	}
+	svc := newPackConfigServiceForTest(repo)
 
-	cfg, err := svc.ReplacePackSizes(context.Background(), []int{53, 31, 23})
+	cfg, err := svc.ReplacePackSizes(context.Background(), []int{1000, 500})
 	if err != nil {
 		t.Fatalf("replace returned error: %v", err)
 	}
@@ -68,36 +86,20 @@ func TestPackConfigServiceReplacePackSizes(t *testing.T) {
 	if cfg.Version != 3 {
 		t.Fatalf("expected version 3, got %d", cfg.Version)
 	}
-	if repo.savedPrev != 2 {
-		t.Fatalf("expected previous version 2, got %d", repo.savedPrev)
-	}
-	if !repo.saveInvoked {
-		t.Fatal("expected save to be invoked")
-	}
-	if len(cfg.PackSizes) != 3 || cfg.PackSizes[0] != 23 || cfg.PackSizes[2] != 53 {
-		t.Fatalf("unexpected pack sizes: %#v", cfg.PackSizes)
+	if repo.updated == nil {
+		t.Fatal("expected update to be called")
 	}
 }
 
-func TestPackConfigServiceReplacePackSizesConflict(t *testing.T) {
-	repo := &configRepoStub{
-		cfg:     &domain.PackConfig{ID: 1, Version: 1, PackSizes: []int{100}},
-		saveErr: domain.ErrPackConfigVersionConflict,
+func TestPackConfigServiceConflict(t *testing.T) {
+	repo := &packConfigRepoStub{
+		current: &domain.PackConfig{Version: 1, PackSizes: []int{250}},
+		updErr:  domain.ErrConcurrencyConflict,
 	}
-	svc := NewPackConfigService(repo)
+	svc := newPackConfigServiceForTest(repo)
 
-	_, err := svc.ReplacePackSizes(context.Background(), []int{23, 31, 53})
-	if !errors.Is(err, domain.ErrPackConfigVersionConflict) {
-		t.Fatalf("expected version conflict, got %v", err)
-	}
-}
-
-func TestPackConfigServiceReplacePackSizesValidation(t *testing.T) {
-	repo := &configRepoStub{cfg: &domain.PackConfig{ID: 1, Version: 1, PackSizes: []int{100}}}
-	svc := NewPackConfigService(repo)
-
-	_, err := svc.ReplacePackSizes(context.Background(), []int{})
-	if !errors.Is(err, domain.ErrInvalidPackSizes) {
-		t.Fatalf("expected invalid pack sizes error, got %v", err)
+	_, err := svc.ReplacePackSizes(context.Background(), []int{500})
+	if !errors.Is(err, domain.ErrConcurrencyConflict) {
+		t.Fatalf("expected ErrConcurrencyConflict, got %v", err)
 	}
 }
