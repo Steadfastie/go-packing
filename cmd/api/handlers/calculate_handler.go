@@ -52,6 +52,8 @@ func (h *CalculateHandler) Handle(c *gin.Context) {
 		// Business rule: calculation requires configured pack sizes.
 		case errors.Is(err, domain.ErrPackSizesNotConfigured):
 			httpx.WriteError(c, http.StatusConflict, "PACK_SIZES_NOT_CONFIGURED", err.Error())
+		case errors.Is(err, domain.ErrCouldNotCalculate):
+			httpx.WriteError(c, http.StatusConflict, "COULD_NOT_CALCULATE", err.Error())
 		default:
 			h.logger.Error("calculate failed", "error", err)
 			httpx.WriteError(c, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error")

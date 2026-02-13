@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"math"
-	"sort"
 
 	"go-packing/internal/domain"
 )
@@ -31,89 +30,69 @@ func (s *CalculateService) Calculate(ctx context.Context, amount int) ([]domain.
 		return nil, domain.ErrPackSizesNotConfigured
 	}
 
-	return optimizePacks(amount, cfg.PackSizes)
+	return calculate(amount, cfg.PackSizes)
 }
 
-// optimizePacks minimizes shipped quantity first, then pack count.
-func optimizePacks(amount int, packSizes []int64) ([]domain.PackBreakdown, error) {
-	if len(packSizes) == 0 {
-		return nil, domain.ErrPackSizesNotConfigured
-	}
-
+// calculate minimizes shipped quantity first, then pack count.
+func calculate(order int, packSizes []int64) ([]domain.PackBreakdown, error) {
+	// Find maximum pack size to bound DP range
 	sizes := make([]int, len(packSizes))
-	for i, packSize := range packSizes {
-		if packSize <= 0 || packSize > int64(math.MaxInt) {
-			return nil, domain.ErrInvalidPackSizes
-		}
-		sizes[i] = int(packSize)
+	maxPack := 0
+	for i, p := range packSizes {
+		sizes[i] = int(p)
+		maxPack = max(maxPack, sizes[i])
 	}
 
-	sort.Slice(sizes, func(i, j int) bool {
-		return sizes[i] > sizes[j]
-	})
+	limit := order + maxPack
 
-	minPack := sizes[len(sizes)-1]
-	// The smallest valid overship is bounded by minPack-1.
-	upper := amount + minPack - 1
-	inf := math.MaxInt / 4
-
-	dp := make([]int, upper+1)
-	prevTotal := make([]int, upper+1)
-	prevPack := make([]int, upper+1)
-
-	for i := range dp {
-		dp[i] = inf
-		prevTotal[i] = -1
-		prevPack[i] = -1
+	// dp[i] = min packs to reach sum i
+	// parent[i] = the size of the last pack used to reach sum i
+	dp := make([]int, limit+1)
+	parent := make([]int, limit+1)
+	
+	for i := 1; i <= limit; i++ {
+			dp[i] = math.MaxInt32 
 	}
-	dp[0] = 0
 
-	for total := 1; total <= upper; total++ {
-		for _, pack := range sizes {
-			if total-pack < 0 {
-				continue
+	// Unbounded knapsack DP. Complexity: O(len(packSizes) * limit)
+	for _, s := range sizes {
+			for i := s; i <= limit; i++ {
+					// Rule #3: If using this pack results in fewer total packs, update.
+					if dp[i-s] != math.MaxInt32 && dp[i-s]+1 < dp[i] {
+							dp[i] = dp[i-s] + 1
+							parent[i] = s
+					}
 			}
-			if dp[total-pack] == inf {
-				continue
+	}
+
+	// Rule #2: find smallest overfill, then fewest packs
+	bestSum := -1
+	for i := order; i <= limit; i++ {
+			if dp[i] != math.MaxInt32 {
+					bestSum = i
+					break 
 			}
-
-			candidate := dp[total-pack] + 1
-			// First minimum candidate wins; descending sizes give deterministic tie-break.
-			if candidate < dp[total] {
-				dp[total] = candidate
-				prevTotal[total] = total - pack
-				prevPack[total] = pack
-			}
-		}
 	}
 
-	bestTotal := -1
-	for total := amount; total <= upper; total++ {
-		if dp[total] != inf {
-			bestTotal = total
-			break
-		}
-	}
-	if bestTotal == -1 {
-		return nil, domain.ErrPackSizesNotConfigured
+	if bestSum == -1 {
+			return nil, domain.ErrCouldNotCalculate
 	}
 
-	counts := make(map[int]int, len(sizes))
-	for cur := bestTotal; cur > 0; {
-		pack := prevPack[cur]
-		if pack <= 0 {
-			return nil, domain.ErrInvalidPackSizes
-		}
-		counts[pack]++
-		cur = prevTotal[cur]
+	// Reconstruct pack selection
+	counts := make(map[int]int)
+	curr := bestSum
+	for curr > 0 {
+			p := parent[curr]
+			counts[p]++
+			curr -= p
 	}
 
 	result := make([]domain.PackBreakdown, 0, len(counts))
-	for _, pack := range sizes {
-		if counts[pack] > 0 {
-			result = append(result, domain.PackBreakdown{Size: pack, Count: counts[pack]})
-		}
+	for size, count := range counts {
+			result = append(result, domain.PackBreakdown{Size: size, Count: count})
 	}
 
+	// Time Complexity: O((order + maxPack) * number_of_pack_sizes)
+	// Space Complexity: O(order + maxPack)
 	return result, nil
 }
