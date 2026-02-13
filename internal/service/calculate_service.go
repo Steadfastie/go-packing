@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"math"
+	"sort"
 
 	"go-packing/internal/domain"
 )
@@ -49,48 +50,52 @@ func calculate(order int, packSizes []int64) ([]domain.PackBreakdown, error) {
 	// parent[i] = the size of the last pack used to reach sum i
 	dp := make([]int, limit+1)
 	parent := make([]int, limit+1)
-	
+
 	for i := 1; i <= limit; i++ {
-			dp[i] = math.MaxInt32 
+		dp[i] = math.MaxInt32
 	}
 
 	// Unbounded knapsack DP. Complexity: O(len(packSizes) * limit)
 	for _, s := range sizes {
-			for i := s; i <= limit; i++ {
-					// Rule #3: If using this pack results in fewer total packs, update.
-					if dp[i-s] != math.MaxInt32 && dp[i-s]+1 < dp[i] {
-							dp[i] = dp[i-s] + 1
-							parent[i] = s
-					}
+		for i := s; i <= limit; i++ {
+			// Rule #3: If using this pack results in fewer total packs, update.
+			if dp[i-s] != math.MaxInt32 && dp[i-s]+1 < dp[i] {
+				dp[i] = dp[i-s] + 1
+				parent[i] = s
 			}
+		}
 	}
 
 	// Rule #2: find smallest overfill, then fewest packs
 	bestSum := -1
 	for i := order; i <= limit; i++ {
-			if dp[i] != math.MaxInt32 {
-					bestSum = i
-					break 
-			}
+		if dp[i] != math.MaxInt32 {
+			bestSum = i
+			break
+		}
 	}
 
 	if bestSum == -1 {
-			return nil, domain.ErrCouldNotCalculate
+		return nil, domain.ErrCouldNotCalculate
 	}
 
 	// Reconstruct pack selection
 	counts := make(map[int]int)
 	curr := bestSum
 	for curr > 0 {
-			p := parent[curr]
-			counts[p]++
-			curr -= p
+		p := parent[curr]
+		counts[p]++
+		curr -= p
 	}
 
 	result := make([]domain.PackBreakdown, 0, len(counts))
 	for size, count := range counts {
-			result = append(result, domain.PackBreakdown{Size: size, Count: count})
+		result = append(result, domain.PackBreakdown{Size: size, Count: count})
 	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Size > result[j].Size
+	})
 
 	// Time Complexity: O((order + maxPack) * number_of_pack_sizes)
 	// Space Complexity: O(order + maxPack)
