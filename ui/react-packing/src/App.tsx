@@ -201,7 +201,6 @@ function App() {
       <div className="layout">
         <section className="panel">
           <h1>Pack Configs</h1>
-          <p className="panel-subtitle">Manage sizes used by your Go API optimizer.</p>
 
           {isLoadingPackSizes ? (
             <p className="message">Loading pack sizes...</p>

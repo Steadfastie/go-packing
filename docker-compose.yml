@@ -31,5 +31,15 @@ services:
       postgres:
         condition: service_healthy
 
+  ui:
+    container_name: go-packing-ui
+    build:
+      context: ./ui/react-packing
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
 volumes:
   postgres_data:
