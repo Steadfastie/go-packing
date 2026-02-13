@@ -43,6 +43,25 @@ jobs:
       - name: Build
         run: go build ./...
 
+  test:
+    name: Test Go
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Run tests
+        run: go test ./...
+
   lint:
     name: Lint Go
     runs-on: ubuntu-latest
@@ -57,7 +76,6 @@ jobs:
           cache: true
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: v2.1
-          args: --config=golangci.yaml
+          version: v2.5.0
