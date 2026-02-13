@@ -23,7 +23,7 @@ API endpoints:
 
 ## Setup
 
-Run the API and PostgreSQL locally with Docker Compose.
+Run everything locally with Docker Compose.
 
 ```bash
 docker compose -p packaging up -d
