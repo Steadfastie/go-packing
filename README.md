@@ -1,3 +1,6 @@
+[![Go CI](https://github.com/Steadfastie/go-packing/actions/workflows/go-ci.yml/badge.svg?branch=main)](https://github.com/Steadfastie/go-packing/actions/workflows/go-ci.yml)
+[![React Build](https://github.com/Steadfastie/go-packing/actions/workflows/react-build.yml/badge.svg?branch=main)](https://github.com/Steadfastie/go-packing/actions/workflows/react-build.yml)
+
 # Go Packing Service
 
 ![UI Preview](ui-preview.png)
