@@ -1,0 +1,42 @@
+name: React Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ui/react-packing/**"
+      - ".github/workflows/react-build.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "ui/react-packing/**"
+      - ".github/workflows/react-build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build React UI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui/react-packing
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ui/react-packing/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
