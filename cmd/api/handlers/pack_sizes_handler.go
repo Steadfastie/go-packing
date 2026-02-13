@@ -40,7 +40,7 @@ func (h *PackSizesHandler) Get(c *gin.Context) {
 
 	if packCfg == nil {
 		c.JSON(http.StatusOK, gin.H{
-			"pack_sizes": []int{},
+			"pack_sizes": []int64{},
 		})
 		return
 	}
@@ -92,13 +92,13 @@ func (h *PackSizesHandler) Replace(c *gin.Context) {
 	})
 }
 
-func isValidPackSizes(packSizes []int) bool {
+func isValidPackSizes(packSizes []int64) bool {
 	if len(packSizes) == 0 {
 		return false
 	}
 
 	// Validation keeps persistence and solver assumptions simple.
-	seen := make(map[int]struct{}, len(packSizes))
+	seen := make(map[int64]struct{}, len(packSizes))
 	for _, size := range packSizes {
 		if size <= 0 {
 			return false

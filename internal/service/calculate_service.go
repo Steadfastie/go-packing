@@ -35,9 +35,19 @@ func (s *CalculateService) Calculate(ctx context.Context, amount int) ([]domain.
 }
 
 // optimizePacks minimizes shipped quantity first, then pack count.
-func optimizePacks(amount int, packSizes []int) ([]domain.PackBreakdown, error) {
+func optimizePacks(amount int, packSizes []int64) ([]domain.PackBreakdown, error) {
+	if len(packSizes) == 0 {
+		return nil, domain.ErrPackSizesNotConfigured
+	}
+
 	sizes := make([]int, len(packSizes))
-	copy(sizes, packSizes)
+	for i, packSize := range packSizes {
+		if packSize <= 0 || packSize > int64(math.MaxInt) {
+			return nil, domain.ErrInvalidPackSizes
+		}
+		sizes[i] = int(packSize)
+	}
+
 	sort.Slice(sizes, func(i, j int) bool {
 		return sizes[i] > sizes[j]
 	})

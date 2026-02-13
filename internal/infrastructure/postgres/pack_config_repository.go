@@ -25,10 +25,9 @@ func NewPackConfigRepository(db *sql.DB, logger *slog.Logger) *PackConfigReposit
 // Get loads the single pack config row (id=1). It returns nil when not initialized.
 func (r *PackConfigRepository) Get(ctx context.Context) (*domain.PackConfig, error) {
 	const query = `
-		SELECT version, pack_sizes, updated_at
+		SELECT version, COALESCE(pack_sizes, '{}'::INTEGER[]), updated_at
 		FROM pack_configs
 		WHERE id = 1
-		LIMIT 1
 	`
 
 	row := r.db.QueryRowContext(ctx, query)
@@ -53,7 +52,13 @@ func (r *PackConfigRepository) Create(ctx context.Context, packCfg domain.PackCo
 		ON CONFLICT DO NOTHING
 	`
 
-	_, err := r.db.ExecContext(ctx, insertQuery, pq.Array(packCfg.PackSizes), packCfg.Version, packCfg.UpdatedAt)
+	_, err := r.db.ExecContext(
+		ctx,
+		insertQuery,
+		pq.Array(packCfg.PackSizes),
+		packCfg.Version,
+		packCfg.UpdatedAt,
+	)
 	if err != nil {
 		r.logger.Error("failed to create pack config", "error", err)
 		return fmt.Errorf("create pack config: %w", err)
@@ -73,7 +78,14 @@ func (r *PackConfigRepository) Update(ctx context.Context, packCfg domain.PackCo
 			AND version = $4
 	`
 
-	result, err := r.db.ExecContext(ctx, updateQuery, pq.Array(packCfg.PackSizes), packCfg.Version, packCfg.UpdatedAt, packCfg.Version-1)
+	result, err := r.db.ExecContext(
+		ctx,
+		updateQuery,
+		pq.Array(packCfg.PackSizes),
+		packCfg.Version,
+		packCfg.UpdatedAt,
+		packCfg.Version-1,
+	)
 	if err != nil {
 		r.logger.Error("failed to update pack config", "error", err)
 		return fmt.Errorf("update pack config: %w", err)

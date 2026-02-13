@@ -3,7 +3,7 @@
     "port": "8080"
   },
   "database": {
-    "url": "postgres://packing:packing@localhost:5400/packing?sslmode=disable"
+    "url": "postgres://packing:packing@postgres:5400/packing?sslmode=disable"
   },
   "log": {
     "level": "debug"

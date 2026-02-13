@@ -28,7 +28,7 @@ func (s *PackConfigService) GetCurrent(ctx context.Context) (*domain.PackConfig,
 }
 
 // ReplacePackSizes updates pack sizes via read-modify-write with optimistic concurrency.
-func (s *PackConfigService) ReplacePackSizes(ctx context.Context, packSizes []int) (*domain.PackConfig, error) {
+func (s *PackConfigService) ReplacePackSizes(ctx context.Context, packSizes []int64) (*domain.PackConfig, error) {
 	packCfg, err := s.repo.Get(ctx)
 	if err != nil {
 		return nil, err

@@ -3,7 +3,7 @@ package domain
 import "testing"
 
 func TestNewPackConfig(t *testing.T) {
-	cfg, err := NewPackConfig([]int{53, 23, 31})
+	cfg, err := NewPackConfig([]int64{53, 23, 31})
 	if err != nil {
 		t.Fatalf("new pack config returned error: %v", err)
 	}
@@ -17,12 +17,12 @@ func TestNewPackConfig(t *testing.T) {
 }
 
 func TestPackConfigReplace(t *testing.T) {
-	cfg, err := NewPackConfig([]int{250, 500})
+	cfg, err := NewPackConfig([]int64{250, 500})
 	if err != nil {
 		t.Fatalf("new pack config returned error: %v", err)
 	}
 
-	if err := cfg.Replace([]int{1000, 500, 250}); err != nil {
+	if err := cfg.Replace([]int64{1000, 500, 250}); err != nil {
 		t.Fatalf("replace returned error: %v", err)
 	}
 

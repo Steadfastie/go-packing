@@ -7,12 +7,12 @@ type CalculateRequest struct {
 
 // PackSizesRequest is the request body for replacing configured pack sizes.
 type PackSizesRequest struct {
-	PackSizes []int `json:"pack_sizes" example:"250,500,1000,2000,5000"`
+	PackSizes []int64 `json:"pack_sizes" example:"250,500,1000,2000,5000"`
 }
 
 // PackSizesResponse is returned by pack size read/update endpoints.
 type PackSizesResponse struct {
-	PackSizes []int `json:"pack_sizes"`
+	PackSizes []int64 `json:"pack_sizes"`
 }
 
 // HealthResponse is the response model for service health checks.
